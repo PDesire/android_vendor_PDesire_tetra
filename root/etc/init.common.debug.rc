@@ -1,0 +1,25 @@
+# Add init for sony specific software
+import init.debug.sonyextras.rc
+
+# Service for debug menu
+service sysdbg /system/bin/sysdbg_service
+    socket sysdbg stream 0666 root system
+    class core
+    user root
+    disabled
+
+# Restore proper SELinux labels for Crash Dumps
+service fixup_crashdumps /system/bin/fixup_crashdumps.sh
+    disabled
+    oneshot
+
+on property:dev.bootcomplete=1
+    start fixup_crashdumps
+
+    # Signal completion of on-device dump handling to host-side dump tool
+    copy /data/media/0/CrashDump/crashinfo /data/media/0/CrashDump/crashinfo.done
+    rm /data/media/0/CrashDump/crashinfo
+    copy /data/misc/crashdumps/crashinfo /data/misc/crashdumps/crashinfo.done
+    rm /data/misc/crashdumps/crashinfo
+
+    start sysdbg
